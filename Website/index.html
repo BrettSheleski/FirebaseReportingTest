@@ -1,0 +1,143 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
+
+    <title>Hello, world!</title>
+</head>
+<body>
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <script>
+        (function () {
+            google.charts.load('current', { 'packages': ['corechart'] });
+            google.charts.setOnLoadCallback(drawChart);
+
+            function drawChart() {
+
+                // Initialize Firebase
+                var config = {
+                    apiKey: "AIzaSyBl5-OvO4WaiBKvxGa4IG4FUoWjlK7X3Yg",
+                    authDomain: "homedevices-202be.firebaseapp.com",
+                    databaseURL: "https://homedevices-202be.firebaseio.com",
+                    projectId: "homedevices-202be",
+                    storageBucket: "homedevices-202be.appspot.com",
+                    messagingSenderId: "644375287881"
+                };
+                firebase.initializeApp(config);
+
+                var chart = new google.visualization.SteppedAreaChart(document.getElementById('chart_div'));
+                var todayChart = new google.visualization.SteppedAreaChart(document.getElementById('chart_div_today'));
+                var chartData = new google.visualization.DataTable();
+                var chartDataModified = false;
+
+                chartData.addColumn('date', 'Date');
+                chartData.addColumn('number', 'State');
+                chartData.addColumn('number', 'Vcc');
+                chartData.addColumn('number', 'Uptime');
+
+
+
+                var todayView = new google.visualization.DataView(chartData);
+
+                var now = new Date();
+                var yesterday = new Date();
+
+                yesterday.setDate(yesterday.getDate() - 1);
+
+                todayView.hideColumns([2, 3])
+                todayView.setRows(todayView.getFilteredRows([{ column: 0, minValue: new Date(2018, 04, 23) }]));
+
+                var chartOptions = {
+                    isStacked: true,
+                    title: "All Time",
+                    hAxis: {
+                        title: 'Date'
+                    },
+                    vAxis: {
+                        minValue: 0,
+                        maxValue: 1
+                    },
+                    width: "100%",
+                    height: "100%",
+                    series: {
+                        0: {
+                            isStacked: true
+                        }
+                    }
+                };
+
+                var todayChartOptions = {
+                    title: "Today",
+                };
+
+                var topic = 'tele/basement-lights/STATE';
+
+                var db = firebase.database();
+
+                var dbRef = db.ref(topic);
+
+                dbRef.on('child_added', function (snapshot) {
+                    var childData = snapshot.val();
+
+                    chartData.addRow([new Date(childData.Time), childData.POWER == "ON" ? 1 : 0, childData.Vcc, 10]);
+                    chartDataModified = true;
+                });
+
+
+                setInterval(function () {
+                    if (chartDataModified) {
+                        drawTheDamnCharts();
+
+                        chartDataModified = false;
+                    }
+                }, 1000);
+
+                function drawTheDamnCharts() {
+                    chart.draw(chartData, chartOptions);
+                    todayChart.draw(todayView, todayChartOptions);
+                }
+
+                drawTheDamnCharts();
+            }
+        })();
+    </script>
+
+    <div class="container">
+
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">Basement Lights</h2>
+                <div class="embed-responsive embed-responsive-16by9">
+                    <div class="embed-responsive-item" id="chart_div">
+                    </div>
+                </div>
+
+                <div class="embed-responsive embed-responsive-16by9">
+                    <div class="embed-responsive-item" id="chart_div_today">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+</body>
+</html>
