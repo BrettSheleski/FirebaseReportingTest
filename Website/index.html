@@ -39,20 +39,16 @@
 
                 chartData.addColumn('date', 'Date');
                 chartData.addColumn('number', 'State');
-                chartData.addColumn('number', 'Vcc');
-                chartData.addColumn('number', 'Uptime');
-
-
-
+                
                 var todayView = new google.visualization.DataView(chartData);
 
                 var now = new Date();
                 var yesterday = new Date();
 
                 yesterday.setDate(yesterday.getDate() - 1);
-
+                
                 todayView.hideColumns([2, 3])
-                todayView.setRows(todayView.getFilteredRows([{ column: 0, minValue: new Date(2018, 04, 23) }]));
+                
 
                 var chartOptions = {
                     isStacked: true,
@@ -74,10 +70,25 @@
                 };
 
                 var todayChartOptions = {
+                    isStacked: true,
                     title: "Today",
+                    hAxis: {
+                        title: 'Date'
+                    },
+                    vAxis: {
+                        minValue: 0,
+                        maxValue: 1
+                    },
+                    width: "100%",
+                    height: "100%",
+                    series: {
+                        0: {
+                            isStacked: true
+                        }
+                    }
                 };
 
-                var topic = 'tele/basement-lights/STATE';
+                var topic = 'stat/basement-lights/POWER';
 
                 var db = firebase.database();
 
@@ -86,7 +97,7 @@
                 dbRef.on('child_added', function (snapshot) {
                     var childData = snapshot.val();
 
-                    chartData.addRow([new Date(childData.Time), childData.POWER == "ON" ? 1 : 0, childData.Vcc, 10]);
+                    chartData.addRow([new Date(childData.timestamp), childData.payload == "ON" ? 1 : 0]);
                     chartDataModified = true;
                 });
 
@@ -100,6 +111,10 @@
                 }, 1000);
 
                 function drawTheDamnCharts() {
+                    todayView.setRows(chartData.getFilteredRows([
+                        { column: 0, minValue: yesterday }
+                    ]));
+
                     chart.draw(chartData, chartOptions);
                     todayChart.draw(todayView, todayChartOptions);
                 }
